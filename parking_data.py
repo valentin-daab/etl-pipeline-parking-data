@@ -1,6 +1,6 @@
 import csv
 import boto3
-import datetime
+from datetime import datetime
 
 from config.get_url import availability_url
 from tools.get_parking_info import handle_url
@@ -10,7 +10,7 @@ url = "main_url"
 
 def get_data():
 
-    with open("/data.csv", "w", encoding="utf-8") as f:
+    with open("data.csv", "w", encoding="utf-8") as f:
         header = ['name', 'status', 'free_spaces']
         writer = csv.DictWriter(f, fieldnames=header)
         writer.writeheader()
@@ -26,7 +26,7 @@ def get_data():
     s3_resource = boto3.resource('s3')
     date = datetime.now()
     filename = f'{date.year}/{date.month}/{date.day}/{date.hour}:{date.minute}/data.csv'
-    response = s3_resource.Object('parking-data', filename).upload_file("/data.csv")         
+    response = s3_resource.Object('parking-data', filename).upload_file("data.csv")         
 
     return response
 
