@@ -1,20 +1,37 @@
+import csv
+import boto3
+import datetime
 
-import json
-import requests
+from config.get_url import availability_url
+from tools.get_parking_info import handle_url
 
 
-url1 = "https://data.strasbourg.eu/api/records/1.0/search/?dataset=occupation-parkings-temps-reel&q=&rows=30&facet=etat_descriptif"
-url2 = "https://data.strasbourg.eu/api/records/1.0/search/?dataset=parkings&q=&rows=32"
-
-final_parking_dict = {
-    "name":[],
-    "position":[],
-    "status":[],
-    "free_spaces":[]
-}
+url = "main_url"
 
 def get_data():
-    with open("data.json", "w") as f:
-        json.dump
 
+    with open("/tmp/data.csv", "w", encoding="utf-8") as f:
+        header = ['name', 'status', 'free_spaces']
+        writer = csv.DictWriter(f, fieldnames=header)
+        writer.writeheader()
 
+        parkings = handle_url(availability_url()[url])
+
+        for parking in parkings['records']:
+
+            writer.writerow({'name': parking['fields']['nom_parking'],
+                             'status': parking['fields']['etat_descriptif'],
+                             'free_spaces': parking['fields']['libre']})
+
+    s3_resource = boto3.resource('s3')
+    date = datetime.now()
+    filename = f'{date.year}/{date.month}/{date.day}/{date.hour}:{date.minute}/data.csv'
+    response = s3_resource.Object('parking-data', filename).upload_file("/tmp/data.csv")         
+
+    return response
+
+def lambda_handler(event, context):
+    get_data()
+
+if __name__ == "__main__":
+    get_data()
